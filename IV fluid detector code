@@ -1,0 +1,105 @@
+import RPi.GPIO as gpio
+import time
+import Adafruit_CharLCD as LCD
+import pyttsx3
+engine = pyttsx3.init()
+
+DT =27
+SCK=11
+HIGH=1
+LOW=0
+sample=0
+val=0
+
+L1 = 5
+L2 = 6
+L3 = 13
+L4 = 19
+
+# These are the four columns
+C1 = 12
+C2 = 16
+C3 = 20
+C4 = 21
+
+lcd_rs = 25
+lcd_en = 24
+lcd_d4 = 23
+lcd_d5 = 17
+lcd_d6 = 18
+lcd_d7 = 22
+lcd_backlight = 2
+
+
+lcd_columns = 16
+lcd_rows = 2
+
+lcd = LCD.Adafruit_CharLCD(lcd_rs, lcd_en, lcd_d4, lcd_d5, lcd_d6, lcd_d7, lcd_columns, lcd_rows, lcd_backlight)
+
+
+gpio.setwarnings(False)
+gpio.setmode(gpio.BCM)
+gpio.setup(SCK, gpio.OUT)
+
+
+
+def readCount():
+  i=0
+  Count=0
+ # print Count
+ # time.sleep(0.001)
+  gpio.setup(DT, gpio.OUT)
+  gpio.output(DT,1)
+  gpio.output(SCK,0)
+  gpio.setup(DT, gpio.IN)
+
+
+  while gpio.input(DT) == 1:
+      i=0
+  for i in range(24):
+        gpio.output(SCK,1)
+        Count=Count<<1
+        gpio.output(SCK,0)
+        #time.sleep(0.001)
+        if gpio.input(DT) == 0:
+            Count=Count+1
+
+            #print Count
+  gpio.output(SCK,1)
+  Count=Count^0x800000
+  #time.sleep(0.001)
+  gpio.output(SCK,0)
+  return Count  
+
+sample= readCount()
+flag=0
+
+while 1:
+  count= readCount()
+  w=0
+  w=-(count-sample)/106
+  print(w,"g")
+  time.sleep(1)
+
+  if w<50:
+     lcd.clear()
+     lcd.message("Need To change  ")
+     lcd.set_cursor(0,1)
+     lcd.message("IV Bottle")
+     
+     voices = engine.getProperty('voices')
+     engine.setProperty('rate', 120)
+     engine.say('Room Number  , Bed Number Y needs an IiiVee Bottle Change')
+     engine.runAndWait()
+     time.sleep(3)
+     voices = engine.getProperty('voices')
+     engine.setProperty('rate', 120)
+     engine.say('Room Number X , Bed Number Y needs an IiiVee Bottle Change')
+     engine.runAndWait()
+     time.sleep(3)
+     lcd.clear()
+  else:
+      lcd.message("Normal")
+      lcd.set_cursor(0,1)
+      lcd.message("condition.........")
+    
